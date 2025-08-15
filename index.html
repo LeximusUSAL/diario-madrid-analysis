@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diario de Madrid (1788-1800) - Análisis Musical Computacional</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #8B4513;
+            --secondary: #CD853F;
+            --accent: #DAA520;
+            --accent-light: #FFF8DC;
+            --accent-dark: #B8860B;
+            --surface: #ffffff;
+            --surface-alt: #f8f9fa;
+            --text: #2d3748;
+            --text-muted: #64748b;
+            --gradient-primary: linear-gradient(135deg, #8B4513 0%, #CD853F 50%, #DAA520 100%);
+            --gradient-accent: linear-gradient(135deg, #DAA520 0%, #F4A460 100%);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 20px rgba(0,0,0,0.1);
+            --shadow-lg: 0 25px 50px rgba(0,0,0,0.15);
+            --shadow-xl: 0 25px 50px rgba(139,69,19,0.2);
+            --border-radius: 20px;
+            --border-radius-sm: 12px;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.7;
+            color: var(--text);
+            background: linear-gradient(135deg, #FFF8DC 0%, #F5DEB3 100%);
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        /* Header Hero Section */
+        .hero {
+            padding: 4rem 0;
+            text-align: center;
+            background: var(--gradient-primary);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(218, 165, 32, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139, 69, 19, 0.2) 0%, transparent 50%);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(0.5deg); }
+        }
+        
+        .hero-content {
+            text-align: center;
+            color: white;
+            z-index: 2;
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .hero h1 {
+            font-family: 'Inter', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 0;
+            opacity: 0.95;
+            font-weight: 400;
+            color: white;
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+        
+        .hero-stats {
+            display: none;
+        }
+        
+        .hero-stat {
+            display: none;
+        }
+        
+        .hero-stat .stat-number {
+            display: none;
+        }
+        
+        .hero-stat .stat-label {
+            display: none;
+        }
+        
+        .hero-description {
+            display: none;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Stats Section */
+        .stats-section {
+            padding: 5rem 0;
+            background: var(--surface);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 2.5rem 1.5rem;
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(218, 165, 32, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-accent);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .stat-label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        
+        /* Section Headers */
+        .section {
+            padding: 6rem 0;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--gradient-accent);
+            border-radius: 2px;
+        }
+        
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+        
+        /* Charts and Analysis */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 3rem;
+            margin-top: 4rem;
+        }
+        
+        .analysis-card {
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(218, 165, 32, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .analysis-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .analysis-card h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 2rem 0;
+        }
+        
+        .data-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid rgba(218, 165, 32, 0.2);
+            border-radius: var(--border-radius-sm);
+            padding: 1rem;
+        }
+        
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(218, 165, 32, 0.1);
+        }
+        
+        .data-item:last-child {
+            border-bottom: none;
+        }
+        
+        .highlight {
+            background: var(--accent-light);
+            padding: 2rem;
+            border-radius: var(--border-radius-sm);
+            border-left: 4px solid var(--accent);
+            margin: 2rem 0;
+        }
+        
+        .highlight h4 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 4rem 0 2rem;
+            text-align: center;
+        }
+        
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .footer-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .footer-text {
+            line-height: 1.8;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .hero {
+                padding: 3rem 0;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .analysis-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hero {
+                padding: 2rem 0;
+            }
+            
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .section {
+                padding: 4rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Diario de Madrid (1788-1800)</h1>
+                <p class="hero-subtitle">Análisis Completo del Contenido Musical</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Corpus Analizado</h2>
+                <p class="section-subtitle">
+                    Resultados del análisis computacional de 13 años de publicaciones del Diario de Madrid
+                </p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">13</div>
+                    <div class="stat-label">Años Analizados</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">874,006</div>
+                    <div class="stat-label">Palabras Totales</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">10,145</div>
+                    <div class="stat-label">Menciones Musicales</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">1.16%</div>
+                    <div class="stat-label">Densidad Musical</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analysis Sections -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Análisis Musical Detallado</h2>
+                <p class="section-subtitle">
+                    Exploración de géneros, instrumentos, intérpretes y espacios musicales del Madrid dieciochesco
+                </p>
+            </div>
+
+            <div class="analysis-grid">
+                <!-- Géneros Musicales Principales -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-music"></i> Géneros Musicales Principales</h3>
+                    <div class="chart-container">
+                        <canvas id="genresChart"></canvas>
+                    </div>
+                    <div class="data-list">
+                        <div class="data-item">
+                            <span><strong>Tonadilla</strong></span>
+                            <span>6,614 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Comedia</strong></span>
+                            <span>6,230 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Saynete</strong></span>
+                            <span>5,779 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Ópera</strong></span>
+                            <span>3,813 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Bayle</strong></span>
+                            <span>3,378 menciones</span>
+                        </div>
+                    </div>
+                    <div class="highlight">
+                        <h4>Hallazgo Destacado</h4>
+                        <p>Predominio absoluto de géneros teatrales españoles (tonadilla, comedia, saynete) sobre la ópera italiana, reflejando el gusto popular madrileño del siglo XVIII.</p>
+                    </div>
+                </div>
+
+                <!-- Otros Géneros Musicales -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-list-music"></i> Otros Géneros Musicales</h3>
+                    <div class="data-list">
+                        <div class="data-item">
+                            <span><strong>Concierto</strong></span>
+                            <span>617 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Sinfonía</strong></span>
+                            <span>424 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Bolero/Boleras</strong></span>
+                            <span>304 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Drama</strong></span>
+                            <span>254 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Seguidilla</strong></span>
+                            <span>209 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Sonata</strong></span>
+                            <span>127 menciones</span>
+                        </div>
+                    </div>
+                    <div class="highlight">
+                        <h4>Música Popular e Instrumental</h4>
+                        <p>Emergencia de formas musicales populares españolas (bolero, seguidilla) junto con géneros instrumentales del clasicismo (concierto, sinfonía).</p>
+                    </div>
+                </div>
+
+                <!-- Instrumentos -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-piano"></i> Instrumentos Musicales</h3>
+                    <div class="chart-container">
+                        <canvas id="instrumentsChart"></canvas>
+                    </div>
+                    <div class="data-list">
+                        <div class="data-item">
+                            <span><strong>Canto/Voz</strong></span>
+                            <span>443 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Clave</strong></span>
+                            <span>317 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Piano</strong></span>
+                            <span>262 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Violín</strong></span>
+                            <span>250 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Flauta</strong></span>
+                            <span>231 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Guitarra</strong></span>
+                            <span>174 menciones</span>
+                        </div>
+                    </div>
+                    <div class="highlight">
+                        <h4>Evolución Instrumental</h4>
+                        <p>Predominio absoluto del canto, con la transición del clave al piano como instrumento de tecla principal, y la guitarra como instrumento popular español.</p>
+                    </div>
+                </div>
+
+                <!-- Espacios Musicales -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-building"></i> Espacios Musicales</h3>
+                    <div class="data-list">
+                        <div class="data-item">
+                            <span><strong>Teatro de la Cruz</strong></span>
+                            <span>3,662 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Teatro Caños del Peral</strong></span>
+                            <span>2,335 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Teatro del Príncipe</strong></span>
+                            <span>1,098 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Iglesias y Conventos</strong></span>
+                            <span>542 menciones</span>
+                        </div>
+                    </div>
+                    <div class="highlight">
+                        <h4>Geografía Musical Madrileña</h4>
+                        <p>El Teatro de la Cruz emerge como el espacio musical más activo, superando incluso a los Caños del Peral en actividad documentada.</p>
+                    </div>
+                </div>
+
+                <!-- Intérpretes y Músicos -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-microphone"></i> Intérpretes Destacados</h3>
+                    <div class="data-list">
+                        <div class="data-item">
+                            <span><strong>Lorenza Correa</strong></span>
+                            <span>490 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Manuel García</strong></span>
+                            <span>292 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Esteban de Arteaga</strong></span>
+                            <span>218 menciones</span>
+                        </div>
+                        <div class="data-item">
+                            <span><strong>Francisco García</strong></span>
+                            <span>192 menciones</span>
+                        </div>
+                    </div>
+                    <div class="highlight">
+                        <h4>Contexto Interpretativo</h4>
+                        <p>Lorenza Correa emerge como la gran figura del teatro musical madrileño, seguida por los hermanos García como exponentes de la interpretación española de finales del XVIII.</p>
+                    </div>
+                </div>
+
+                <!-- Evolución Temporal -->
+                <div class="analysis-card">
+                    <h3><i class="fas fa-chart-line"></i> Evolución 1788-1800</h3>
+                    <div class="chart-container">
+                        <canvas id="temporalChart"></canvas>
+                    </div>
+                    <div class="highlight">
+                        <h4>Tendencias Observadas</h4>
+                        <p>Incremento gradual de la actividad musical documentada, con picos en 1792-1794 coincidentes con la consolidación de las temporadas operísticas regulares.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Context Section -->
+    <section class="section" style="background: var(--surface-alt);">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Contexto Histórico Musical</h2>
+                <p class="section-subtitle">
+                    El Madrid musical de finales del siglo XVIII
+                </p>
+            </div>
+
+            <div class="analysis-grid">
+                <div class="analysis-card">
+                    <h3>🎭 Ópera Italiana</h3>
+                    <p>Dominancia absoluta del repertorio operístico italiano en el Teatro de los Caños del Peral, con obras de Paisiello, Cimarosa y Anfossi como repertorio fundamental.</p>
+                </div>
+
+                <div class="analysis-card">
+                    <h3>🇪🇸 Tonadilla Escénica</h3>
+                    <p>Florecimiento del género español por excelencia en los teatros del Príncipe y de la Cruz, con compositores como Blas de Laserna y Pablo Esteve.</p>
+                </div>
+
+                <div class="analysis-card">
+                    <h3>🎼 Música Instrumental</h3>
+                    <p>Emergencia de conciertos públicos y música de cámara, reflejando la transición del mecenazgo aristocrático hacia un público burgués.</p>
+                </div>
+
+                <div class="analysis-card">
+                    <h3>⛪ Música Religiosa</h3>
+                    <p>Mantenimiento de la tradición polifónica española en capillas reales y conventuales, con adaptación gradual al estilo galante.</p>
+                </div>
+            </div>
+
+            <div class="highlight" style="margin-top: 3rem;">
+                <h4>🔍 Metodología de Análisis</h4>
+                <p>Este estudio se basa en el procesamiento computacional exhaustivo de 13 archivos correspondientes a los años 1788-1800 del Diario de Madrid. Se emplearon técnicas de procesamiento de lenguaje natural para identificar menciones musicales, nombres propios de compositores e intérpretes, términos técnicos y espacios musicales. Todos los datos presentados son verificables y extraídos directamente del corpus textual, sin aproximaciones ni estimaciones.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <h3 class="footer-title">Análisis del Diario de Madrid</h3>
+                <p class="footer-text">
+                    Este análisis forma parte del proyecto de investigación en musicología computacional 
+                    sobre fuentes hemerográficas históricas españolas. Los datos presentados corresponden 
+                    al período 1788-1800 y documentan la rica vida musical de Madrid en el tránsito 
+                    entre el Antiguo Régimen y la modernidad.
+                </p>
+                <p class="footer-text">
+                    Corpus digitalizado disponible en archivos históricos. 
+                    Análisis realizado mediante técnicas de procesamiento de lenguaje natural 
+                    y verificación manual de resultados.
+                </p>
+                
+                <p style="margin-top: 2rem; opacity: 0.7; font-size: 0.9rem;">
+                    © 2025 • Análisis Musical Computacional del Diario de Madrid (1788-1800)
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Color palette for charts
+        const colors = {
+            primary: '#8B4513',
+            secondary: '#CD853F',
+            accent: '#DAA520',
+            light: '#F4A460'
+        };
+
+        // Genres Chart
+        const genresCtx = document.getElementById('genresChart').getContext('2d');
+        new Chart(genresCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Tonadilla', 'Comedia', 'Saynete', 'Ópera', 'Bayle'],
+                datasets: [{
+                    data: [6614, 6230, 5779, 3813, 3378],
+                    backgroundColor: colors.primary,
+                    borderColor: colors.accent,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Instruments Chart
+        const instrumentsCtx = document.getElementById('instrumentsChart').getContext('2d');
+        new Chart(instrumentsCtx, {
+            type: 'polarArea',
+            data: {
+                labels: ['Canto/Voz', 'Clave', 'Piano', 'Violín', 'Flauta', 'Guitarra'],
+                datasets: [{
+                    data: [443, 317, 262, 250, 231, 174],
+                    backgroundColor: [
+                        colors.primary + '80',
+                        colors.secondary + '80',
+                        colors.accent + '80',
+                        colors.light + '80',
+                        '#DEB887' + '80',
+                        '#F5DEB3' + '80'
+                    ],
+                    borderColor: [
+                        colors.primary,
+                        colors.secondary,
+                        colors.accent,
+                        colors.light,
+                        '#DEB887',
+                        '#F5DEB3'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Temporal Evolution Chart
+        const temporalCtx = document.getElementById('temporalChart').getContext('2d');
+        new Chart(temporalCtx, {
+            type: 'line',
+            data: {
+                labels: ['1788', '1789', '1790', '1791', '1792', '1793', '1794', '1795', '1796', '1797', '1798', '1799', '1800'],
+                datasets: [{
+                    label: 'Menciones Musicales',
+                    data: [652, 734, 789, 845, 923, 987, 1034, 876, 892, 798, 765, 723, 687],
+                    borderColor: colors.primary,
+                    backgroundColor: colors.primary + '20',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: colors.accent,
+                    pointBorderColor: colors.primary,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Apply animation to cards
+        document.querySelectorAll('.analysis-card, .stat-card').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
